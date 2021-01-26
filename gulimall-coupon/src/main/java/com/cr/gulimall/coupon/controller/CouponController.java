@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Map;
 
 
@@ -24,6 +25,13 @@ import java.util.Map;
 public class CouponController {
     @Autowired
     private CouponService couponService;
+
+    @RequestMapping("/member/list")
+    public R membercoupons() {
+        CouponEntity couponEntity = new CouponEntity();
+        couponEntity.setCouponName("满100减10");
+        return R.ok().put("coupons", Collections.singletonList(couponEntity));
+    }
 
     /**
      * 列表
