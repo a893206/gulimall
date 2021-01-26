@@ -7,3 +7,6 @@ spring:
         server-addr: 127.0.0.1:8848
         file-extension: yml
         namespace: 224c465b-7103-4dd2-8926-ec6f5343b5a4
+        ext-config:
+          - data-id: datasource.yml
+            refresh: true
