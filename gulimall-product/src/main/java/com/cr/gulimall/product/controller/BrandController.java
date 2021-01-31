@@ -4,6 +4,7 @@ import com.cr.common.utils.PageUtils;
 import com.cr.common.utils.R;
 import com.cr.common.valid.AddGroup;
 import com.cr.common.valid.UpdateGroup;
+import com.cr.common.valid.UpdateStatusGroup;
 import com.cr.gulimall.product.entity.BrandEntity;
 import com.cr.gulimall.product.service.BrandService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -67,6 +68,17 @@ public class BrandController {
     @RequestMapping("/update")
     //@RequiresPermissions("product:brand:update")
     public R update(@Validated({UpdateGroup.class}) @RequestBody BrandEntity brand) {
+        brandService.updateById(brand);
+
+        return R.ok();
+    }
+
+    /**
+     * 修改状态
+     */
+    @RequestMapping("/update/status")
+    //@RequiresPermissions("product:brand:update")
+    public R updateStatus(@Validated({UpdateStatusGroup.class}) @RequestBody BrandEntity brand) {
         brandService.updateById(brand);
 
         return R.ok();
