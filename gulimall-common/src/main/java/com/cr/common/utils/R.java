@@ -8,6 +8,7 @@
 
 package com.cr.common.utils;
 
+import com.cr.common.exception.BizCodeEnum;
 import org.apache.http.HttpStatus;
 
 import java.util.HashMap;
@@ -32,6 +33,13 @@ public class R extends HashMap<String, Object> {
 	
 	public static R error(String msg) {
 		return error(HttpStatus.SC_INTERNAL_SERVER_ERROR, msg);
+	}
+
+	public static R error(BizCodeEnum bizCodeEnum) {
+		R r = new R();
+		r.put("code", bizCodeEnum.code);
+		r.put("msg", bizCodeEnum.msg);
+		return r;
 	}
 	
 	public static R error(int code, String msg) {
