@@ -2,17 +2,17 @@ package com.cr.gulimall.product.entity;
 
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import lombok.Data;
 
 import java.io.Serializable;
 import java.util.Date;
-import lombok.Data;
 
 /**
  * 商品评价
  * 
  * @author cr
  * @email 931009686@qq.com
- * @date 2021-01-25 23:32:51
+ * @date 2021-01-31 23:20:58
  */
 @Data
 @TableName("pms_spu_comment")

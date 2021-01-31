@@ -11,7 +11,7 @@ import java.io.Serializable;
  * 
  * @author cr
  * @email 931009686@qq.com
- * @date 2021-01-25 23:32:51
+ * @date 2021-01-31 23:20:58
  */
 @Data
 @TableName("pms_attr_attrgroup_relation")
