@@ -13,4 +13,6 @@ public class AttrRespVo extends AttrVo {
 
     private String groupName;
 
+    private Long[] catalogPath;
+
 }
