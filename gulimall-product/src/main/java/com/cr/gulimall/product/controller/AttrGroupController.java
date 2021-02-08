@@ -4,6 +4,7 @@ import com.cr.common.utils.PageUtils;
 import com.cr.common.utils.R;
 import com.cr.gulimall.product.entity.AttrGroupEntity;
 import com.cr.gulimall.product.service.AttrGroupService;
+import com.cr.gulimall.product.service.CategoryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,6 +25,9 @@ public class AttrGroupController {
     @Autowired
     private AttrGroupService attrGroupService;
 
+    @Autowired
+    private CategoryService categoryService;
+
     /**
      * 列表
      */
@@ -37,7 +41,6 @@ public class AttrGroupController {
         return R.ok().put("page", page);
     }
 
-
     /**
      * 信息
      */
@@ -45,6 +48,11 @@ public class AttrGroupController {
     //@RequiresPermissions("product:attrgroup:info")
     public R info(@PathVariable("attrGroupId") Long attrGroupId) {
         AttrGroupEntity attrGroup = attrGroupService.getById(attrGroupId);
+
+        Long catalogId = attrGroup.getCatalogId();
+        Long[] path = categoryService.findCatalogPath(catalogId);
+
+        attrGroup.setCatalogPath(path);
 
         return R.ok().put("attrGroup", attrGroup);
     }
