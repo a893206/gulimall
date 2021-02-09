@@ -56,6 +56,12 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
         baseMapper.deleteBatchIds(list);
     }
 
+    /**
+     * 找到catalogId的完整路径
+     * [父, 子, 孙]
+     * @param catalogId
+     * @return
+     */
     @Override
     public Long[] findCatalogPath(Long catalogId) {
         List<Long> parentPath = findParentPath(catalogId, new ArrayList<>());
@@ -64,6 +70,10 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
         return parentPath.toArray(new Long[0]);
     }
 
+    /**
+     * 级联更新所有关联的数据
+     * @param category
+     */
     @Transactional
     @Override
     public void updateCascade(CategoryEntity category) {

@@ -17,6 +17,7 @@ import com.cr.gulimall.product.entity.AttrGroupEntity;
 import com.cr.gulimall.product.entity.CategoryEntity;
 import com.cr.gulimall.product.service.AttrService;
 import com.cr.gulimall.product.service.CategoryService;
+import com.cr.gulimall.product.vo.AttrGroupRelationVo;
 import com.cr.gulimall.product.vo.AttrRespVo;
 import com.cr.gulimall.product.vo.AttrVo;
 import org.apache.logging.log4j.util.Strings;
@@ -25,6 +26,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -175,6 +177,29 @@ public class AttrServiceImpl extends ServiceImpl<AttrDao, AttrEntity> implements
                 relationDao.insert(relationEntity);
             }
         }
+    }
+
+    /**
+     * 根据分组id查找关联的所有基本属性
+     *
+     * @param attrGroupId 分组id
+     * @return 商品属性对象集合
+     */
+    @Override
+    public List<AttrEntity> getRelationAttr(String attrGroupId) {
+        List<AttrAttrgroupRelationEntity> entities = relationDao.selectList(new QueryWrapper<AttrAttrgroupRelationEntity>().eq("attr_group_id", attrGroupId));
+        List<Long> attrIds = entities.stream().map((AttrAttrgroupRelationEntity::getAttrId)).collect(Collectors.toList());
+        return listByIds(attrIds);
+    }
+
+    @Override
+    public void deleteRelation(AttrGroupRelationVo[] vos) {
+        List<AttrAttrgroupRelationEntity> entities = Arrays.stream(vos).map(attrGroupRelationVo -> {
+            AttrAttrgroupRelationEntity attrgroupRelationEntity = new AttrAttrgroupRelationEntity();
+            BeanUtils.copyProperties(attrGroupRelationVo, attrgroupRelationEntity);
+            return attrgroupRelationEntity;
+        }).collect(Collectors.toList());
+        relationDao.deleteBatchRelation(entities);
     }
 
 }
