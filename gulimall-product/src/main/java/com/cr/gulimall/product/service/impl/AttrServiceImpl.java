@@ -20,6 +20,7 @@ import com.cr.gulimall.product.service.CategoryService;
 import com.cr.gulimall.product.vo.AttrGroupRelationVo;
 import com.cr.gulimall.product.vo.AttrRespVo;
 import com.cr.gulimall.product.vo.AttrVo;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -189,6 +190,9 @@ public class AttrServiceImpl extends ServiceImpl<AttrDao, AttrEntity> implements
     public List<AttrEntity> getRelationAttr(String attrGroupId) {
         List<AttrAttrgroupRelationEntity> entities = relationDao.selectList(new QueryWrapper<AttrAttrgroupRelationEntity>().eq("attr_group_id", attrGroupId));
         List<Long> attrIds = entities.stream().map((AttrAttrgroupRelationEntity::getAttrId)).collect(Collectors.toList());
+        if (attrIds.isEmpty()) {
+            return null;
+        }
         return listByIds(attrIds);
     }
 
@@ -200,6 +204,44 @@ public class AttrServiceImpl extends ServiceImpl<AttrDao, AttrEntity> implements
             return attrgroupRelationEntity;
         }).collect(Collectors.toList());
         relationDao.deleteBatchRelation(entities);
+    }
+
+    /**
+     * 获取当前分组没有关联的所有属性
+     *
+     * @param attrGroupId
+     * @param params
+     * @return
+     */
+    @Override
+    public PageUtils getNoRelationAttr(String attrGroupId, Map<String, Object> params) {
+        // 1、当前分组只能关联自己所属的分类里面的所有属性
+        AttrGroupEntity attrGroupEntity = attrGroupDao.selectById(attrGroupId);
+        Long catalogId = attrGroupEntity.getCatalogId();
+
+        // 2、当前分组只能关联别的分组没有引用的属性
+        // 2.1、当前分类下的其他分组
+        List<AttrGroupEntity> group = attrGroupDao.selectList(new QueryWrapper<AttrGroupEntity>().eq("catalog_id", catalogId));
+        List<Long> collect = group.stream().map(AttrGroupEntity::getAttrGroupId).collect(Collectors.toList());
+
+        // 2.2、这些分组关联的属性
+        List<AttrAttrgroupRelationEntity> groupId = relationDao.selectList(new QueryWrapper<AttrAttrgroupRelationEntity>().in("attr_group_id", collect));
+        List<Long> attrIds = groupId.stream().map(AttrAttrgroupRelationEntity::getAttrId).collect(Collectors.toList());
+
+        // 2.3、从当前分类的所有属性中移除这些属性
+        QueryWrapper<AttrEntity> wrapper = new QueryWrapper<AttrEntity>().eq("catalog_id", catalogId).eq("attr_type", ProductConstant.AttrEnum.ATTR_TYPE_BASE.code);
+        if (!attrIds.isEmpty()) {
+            wrapper.notIn("attr_id", attrIds);
+        }
+        String key = (String) params.get("key");
+        if (StringUtils.isNotBlank(key)) {
+            wrapper.and((w) -> {
+                w.eq("attr_id", key).or().like("attr_name", key);
+            });
+        }
+        IPage<AttrEntity> page = page(new Query<AttrEntity>().getPage(params), wrapper);
+
+        return new PageUtils(page);
     }
 
 }
