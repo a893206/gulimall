@@ -4,6 +4,7 @@ import com.cr.common.utils.PageUtils;
 import com.cr.common.utils.R;
 import com.cr.gulimall.product.entity.AttrEntity;
 import com.cr.gulimall.product.entity.AttrGroupEntity;
+import com.cr.gulimall.product.service.AttrAttrgroupRelationService;
 import com.cr.gulimall.product.service.AttrGroupService;
 import com.cr.gulimall.product.service.AttrService;
 import com.cr.gulimall.product.service.CategoryService;
@@ -35,6 +36,15 @@ public class AttrGroupController {
     @Autowired
     private AttrService attrService;
 
+    @Autowired
+    private AttrAttrgroupRelationService relationService;
+
+    @PostMapping("/attr/relation")
+    public R addRelation(@RequestBody List<AttrGroupRelationVo> vos) {
+        relationService.saveBatch(vos);
+        return R.ok();
+    }
+
     @GetMapping("/{attrGroupId}/attr/relation")
     public R attrRelation(@PathVariable("attrGroupId") String attrGroupId) {
         List<AttrEntity> entities = attrService.getRelationAttr(attrGroupId);
@@ -42,7 +52,7 @@ public class AttrGroupController {
     }
 
     @GetMapping("/{attrGroupId}/noattr/relation")
-    public R noAttrRelation(@PathVariable("attrGroupId") String attrGroupId, @RequestParam Map<String, Object> params) {
+    public R attrNoRelation(@PathVariable("attrGroupId") String attrGroupId, @RequestParam Map<String, Object> params) {
         PageUtils page = attrService.getNoRelationAttr(attrGroupId, params);
         return R.ok().put("page", page);
     }
