@@ -4,6 +4,7 @@ import com.cr.common.utils.PageUtils;
 import com.cr.common.utils.R;
 import com.cr.gulimall.product.entity.SpuInfoEntity;
 import com.cr.gulimall.product.service.SpuInfoService;
+import com.cr.gulimall.product.vo.SpuSaveVo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,6 +23,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("product/spuinfo")
 public class SpuInfoController {
+
     @Autowired
     private SpuInfoService spuInfoService;
 
@@ -35,7 +37,6 @@ public class SpuInfoController {
 
         return R.ok().put("page", page);
     }
-
 
     /**
      * 信息
@@ -53,8 +54,7 @@ public class SpuInfoController {
      */
     @RequestMapping("/save")
     //@RequiresPermissions("product:spuinfo:save")
-    public R save(@RequestBody SpuInfoEntity spuInfo){
-		spuInfoService.save(spuInfo);
+    public R save(@RequestBody SpuSaveVo vo){
 
         return R.ok();
     }
