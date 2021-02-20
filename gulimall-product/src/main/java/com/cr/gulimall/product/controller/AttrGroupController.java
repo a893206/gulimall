@@ -9,6 +9,7 @@ import com.cr.gulimall.product.service.AttrGroupService;
 import com.cr.gulimall.product.service.AttrService;
 import com.cr.gulimall.product.service.CategoryService;
 import com.cr.gulimall.product.vo.AttrGroupRelationVo;
+import com.cr.gulimall.product.vo.AttrGroupWithAttrsVo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -39,6 +40,15 @@ public class AttrGroupController {
     @Autowired
     private AttrAttrgroupRelationService relationService;
 
+    @GetMapping("/{catalogId}/withattr")
+    public R getAttrGroupWithAttrs(@PathVariable("catalogId") Long catalogId) {
+        // 1、查出当前分类下的所有属性分组
+        List<AttrGroupWithAttrsVo> vos = attrGroupService.getAttrGroupWithAttrsByCatalogId(catalogId);
+        // 2、查出每个属性分组的所有属性
+
+        return R.ok().put("data", vos);
+    }
+
     @PostMapping("/attr/relation")
     public R addRelation(@RequestBody List<AttrGroupRelationVo> vos) {
         relationService.saveBatch(vos);
@@ -46,13 +56,13 @@ public class AttrGroupController {
     }
 
     @GetMapping("/{attrGroupId}/attr/relation")
-    public R attrRelation(@PathVariable("attrGroupId") String attrGroupId) {
+    public R attrRelation(@PathVariable("attrGroupId") Long attrGroupId) {
         List<AttrEntity> entities = attrService.getRelationAttr(attrGroupId);
         return R.ok().put("data", entities);
     }
 
     @GetMapping("/{attrGroupId}/noattr/relation")
-    public R attrNoRelation(@PathVariable("attrGroupId") String attrGroupId, @RequestParam Map<String, Object> params) {
+    public R attrNoRelation(@PathVariable("attrGroupId") Long attrGroupId, @RequestParam Map<String, Object> params) {
         PageUtils page = attrService.getNoRelationAttr(attrGroupId, params);
         return R.ok().put("page", page);
     }

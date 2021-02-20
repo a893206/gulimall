@@ -34,7 +34,7 @@ public interface AttrService extends IService<AttrEntity> {
      * @param attrGroupId 分组id
      * @return 商品属性对象集合
      */
-    List<AttrEntity> getRelationAttr(String attrGroupId);
+    List<AttrEntity> getRelationAttr(Long attrGroupId);
 
     void deleteRelation(AttrGroupRelationVo[] vos);
 
@@ -44,7 +44,7 @@ public interface AttrService extends IService<AttrEntity> {
      * @param params
      * @return
      */
-    PageUtils getNoRelationAttr(String attrGroupId, Map<String, Object> params);
+    PageUtils getNoRelationAttr(Long attrGroupId, Map<String, Object> params);
 
 }
 

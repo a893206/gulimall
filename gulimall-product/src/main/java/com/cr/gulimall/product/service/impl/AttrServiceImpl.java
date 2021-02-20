@@ -27,6 +27,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -187,11 +188,11 @@ public class AttrServiceImpl extends ServiceImpl<AttrDao, AttrEntity> implements
      * @return 商品属性对象集合
      */
     @Override
-    public List<AttrEntity> getRelationAttr(String attrGroupId) {
+    public List<AttrEntity> getRelationAttr(Long attrGroupId) {
         List<AttrAttrgroupRelationEntity> entities = relationDao.selectList(new QueryWrapper<AttrAttrgroupRelationEntity>().eq("attr_group_id", attrGroupId));
         List<Long> attrIds = entities.stream().map((AttrAttrgroupRelationEntity::getAttrId)).collect(Collectors.toList());
         if (attrIds.isEmpty()) {
-            return null;
+            return new ArrayList<>();
         }
         return listByIds(attrIds);
     }
@@ -214,7 +215,7 @@ public class AttrServiceImpl extends ServiceImpl<AttrDao, AttrEntity> implements
      * @return
      */
     @Override
-    public PageUtils getNoRelationAttr(String attrGroupId, Map<String, Object> params) {
+    public PageUtils getNoRelationAttr(Long attrGroupId, Map<String, Object> params) {
         // 1、当前分组只能关联自己所属的分类里面的所有属性
         AttrGroupEntity attrGroupEntity = attrGroupDao.selectById(attrGroupId);
         Long catalogId = attrGroupEntity.getCatalogId();
