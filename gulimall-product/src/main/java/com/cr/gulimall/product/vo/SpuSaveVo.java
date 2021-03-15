@@ -28,7 +28,7 @@ public class SpuSaveVo {
 
     private int publishStatus;
 
-    private List<String> decript;
+    private List<String> descript;
 
     private List<String> images;
 
