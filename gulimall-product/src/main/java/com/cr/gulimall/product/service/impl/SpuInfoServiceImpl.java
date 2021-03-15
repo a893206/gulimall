@@ -6,13 +6,9 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.cr.common.utils.PageUtils;
 import com.cr.common.utils.Query;
 import com.cr.gulimall.product.dao.SpuInfoDao;
-import com.cr.gulimall.product.entity.AttrEntity;
-import com.cr.gulimall.product.entity.ProductAttrValueEntity;
-import com.cr.gulimall.product.entity.SpuInfoDescEntity;
-import com.cr.gulimall.product.entity.SpuInfoEntity;
+import com.cr.gulimall.product.entity.*;
 import com.cr.gulimall.product.service.*;
-import com.cr.gulimall.product.vo.BaseAttrs;
-import com.cr.gulimall.product.vo.SpuSaveVo;
+import com.cr.gulimall.product.vo.*;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -41,6 +37,15 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoDao, SpuInfoEntity> i
 
     @Autowired
     private ProductAttrValueService attrValueService;
+
+    @Autowired
+    private SkuInfoService skuInfoService;
+
+    @Autowired
+    private SkuImagesService skuImagesService;
+
+    @Autowired
+    private SkuSaleAttrValueService skuSaleAttrValueService;
 
     @Override
     public PageUtils queryPage(Map<String, Object> params) {
@@ -91,14 +96,57 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoDao, SpuInfoEntity> i
         // 5、保存spu的积分信息 sms_spu_bounds
 
         // 6、保存当前spu对应的所有sku信息
+        List<Skus> skus = vo.getSkus();
+        if (skus != null && !skus.isEmpty()) {
+            skus.forEach(item -> {
+                String defaultImg = "";
+                for (Images image : item.getImages()) {
+                    if (image.getDefaultImg() == 1) {
+                        defaultImg = image.getImgUrl();
+                        break;
+                    }
+                }
+                SkuInfoEntity skuInfoEntity = new SkuInfoEntity();
+                BeanUtils.copyProperties(item, skuInfoEntity);
+                skuInfoEntity.setBrandId(infoEntity.getBrandId());
+                skuInfoEntity.setCatalogId(infoEntity.getCatalogId());
+                skuInfoEntity.setSaleCount(0L);
+                skuInfoEntity.setSpuId(infoEntity.getId());
+                skuInfoEntity.setSkuDefaultImg(defaultImg);
 
-        // 6.1、sku的基本信息 pms_sku_info
+                // 6.1、sku的基本信息 pms_sku_info
+                skuInfoService.saveSkuInfo(skuInfoEntity);
 
-        // 6.2、sku的图片信息 pms_sku_images
+                Long skuId = skuInfoEntity.getSkuId();
 
-        // 6.3、sku的销售属性 pms_sku_sale_attr_value
+                List<SkuImagesEntity> skuImagesEntities = item.getImages().stream().map(image -> {
+                    SkuImagesEntity skuImagesEntity = new SkuImagesEntity();
+                    skuImagesEntity.setSkuId(skuId);
+                    skuImagesEntity.setImgUrl(image.getImgUrl());
+                    skuImagesEntity.setDefaultImg(image.getDefaultImg());
 
-        // 6.4、sku的优惠、满减等信息 sms_sku_ladder、sms_sku_full_reduction、sms_member_price
+                    return skuImagesEntity;
+                }).collect(Collectors.toList());
+
+                // 6.2、sku的图片信息 pms_sku_images
+                skuImagesService.saveBatch(skuImagesEntities);
+
+                List<Attr> attr = item.getAttr();
+                List<SkuSaleAttrValueEntity> skuSaleAttrValueEntities = attr.stream().map(a -> {
+                    SkuSaleAttrValueEntity attrValueEntity = new SkuSaleAttrValueEntity();
+                    BeanUtils.copyProperties(a, attrValueEntity);
+                    attrValueEntity.setSkuId(skuId);
+
+                    return attrValueEntity;
+                }).collect(Collectors.toList());
+
+                // 6.3、sku的销售属性 pms_sku_sale_attr_value
+                skuSaleAttrValueService.saveBatch(skuSaleAttrValueEntities);
+
+                // 6.4、sku的优惠、满减等信息 sms_sku_ladder、sms_sku_full_reduction、sms_member_price
+
+            });
+        }
     }
 
     @Override
