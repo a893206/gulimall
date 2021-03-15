@@ -4,6 +4,7 @@
 package com.cr.gulimall.product.vo;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -18,7 +19,7 @@ public class Skus {
 
     private String skuName;
 
-    private String price;
+    private BigDecimal price;
 
     private String skuTitle;
 
@@ -30,13 +31,13 @@ public class Skus {
 
     private int fullCount;
 
-    private double discount;
+    private BigDecimal discount;
 
     private int countStatus;
 
-    private int fullPrice;
+    private BigDecimal fullPrice;
 
-    private int reducePrice;
+    private BigDecimal reducePrice;
 
     private int priceStatus;
 

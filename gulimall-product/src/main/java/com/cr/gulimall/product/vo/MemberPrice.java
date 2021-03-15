@@ -5,6 +5,8 @@ package com.cr.gulimall.product.vo;
 
 import lombok.Data;
 
+import java.math.BigDecimal;
+
 /**
  * Auto-generated: 2021-02-20 17:13:7
  *
@@ -13,10 +15,10 @@ import lombok.Data;
 @Data
 public class MemberPrice {
 
-    private int id;
+    private Long id;
 
     private String name;
 
-    private int price;
+    private BigDecimal price;
 
 }
