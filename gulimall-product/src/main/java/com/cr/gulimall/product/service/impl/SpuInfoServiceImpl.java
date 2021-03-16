@@ -3,10 +3,14 @@ package com.cr.gulimall.product.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.cr.common.to.SkuReductionTo;
+import com.cr.common.to.SpuBoundsTo;
 import com.cr.common.utils.PageUtils;
 import com.cr.common.utils.Query;
+import com.cr.common.utils.R;
 import com.cr.gulimall.product.dao.SpuInfoDao;
 import com.cr.gulimall.product.entity.*;
+import com.cr.gulimall.product.feign.CouponFeignService;
 import com.cr.gulimall.product.service.*;
 import com.cr.gulimall.product.vo.*;
 import org.springframework.beans.BeanUtils;
@@ -46,6 +50,9 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoDao, SpuInfoEntity> i
 
     @Autowired
     private SkuSaleAttrValueService skuSaleAttrValueService;
+
+    @Autowired
+    private CouponFeignService couponFeignService;
 
     @Override
     public PageUtils queryPage(Map<String, Object> params) {
@@ -94,6 +101,14 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoDao, SpuInfoEntity> i
         attrValueService.saveProductAttr(collect);
 
         // 5、保存spu的积分信息 sms_spu_bounds
+        Bounds bounds = vo.getBounds();
+        SpuBoundsTo spuBoundsTo = new SpuBoundsTo();
+        BeanUtils.copyProperties(bounds, spuBoundsTo);
+        spuBoundsTo.setSpuId(infoEntity.getId());
+        R r = couponFeignService.saveSpuBounds(spuBoundsTo);
+        if (r.getCode() != 0) {
+            log.error("远程保存spu积分信息失败");
+        }
 
         // 6、保存当前spu对应的所有sku信息
         List<Skus> skus = vo.getSkus();
@@ -144,7 +159,13 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoDao, SpuInfoEntity> i
                 skuSaleAttrValueService.saveBatch(skuSaleAttrValueEntities);
 
                 // 6.4、sku的优惠、满减等信息 sms_sku_ladder、sms_sku_full_reduction、sms_member_price
-
+                SkuReductionTo skuReductionTo = new SkuReductionTo();
+                BeanUtils.copyProperties(item, skuInfoEntity);
+                skuReductionTo.setSkuId(skuId);
+                R r1 = couponFeignService.saveSkuReduction(skuReductionTo);
+                if (r1.getCode() != 0) {
+                    log.error("远程保存sku优惠信息失败");
+                }
             });
         }
     }
