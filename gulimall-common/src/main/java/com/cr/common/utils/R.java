@@ -72,6 +72,6 @@ public class R extends HashMap<String, Object> {
 	}
 
 	public Integer getCode() {
-		return Integer.parseInt(String.valueOf(get("code")));
+		return (Integer) get("code");
 	}
 }

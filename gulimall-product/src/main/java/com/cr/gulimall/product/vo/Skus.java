@@ -27,7 +27,7 @@ public class Skus {
 
     private List<Images> images;
 
-    private List<String> desc;
+    private List<String> descartes;
 
     private int fullCount;
 

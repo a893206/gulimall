@@ -144,6 +144,7 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoDao, SpuInfoEntity> i
                 }).collect(Collectors.toList());
 
                 // 6.2、sku的图片信息 pms_sku_images
+                // TODO 没有图片路径的无需保存
                 skuImagesService.saveBatch(skuImagesEntities);
 
                 List<Attr> attr = item.getAttr();
@@ -160,7 +161,7 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoDao, SpuInfoEntity> i
 
                 // 6.4、sku的优惠、满减等信息 sms_sku_ladder、sms_sku_full_reduction、sms_member_price
                 SkuReductionTo skuReductionTo = new SkuReductionTo();
-                BeanUtils.copyProperties(item, skuInfoEntity);
+                BeanUtils.copyProperties(item, skuReductionTo);
                 skuReductionTo.setSkuId(skuId);
                 R r1 = couponFeignService.saveSkuReduction(skuReductionTo);
                 if (r1.getCode() != 0) {
