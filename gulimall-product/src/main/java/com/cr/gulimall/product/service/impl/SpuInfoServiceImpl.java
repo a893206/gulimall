@@ -185,21 +185,19 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoDao, SpuInfoEntity> i
         QueryWrapper<SpuInfoEntity> wrapper = new QueryWrapper<>();
 
         String key = (String) params.get("key");
-        if (StringUtils.isNotEmpty(key)) {
-            wrapper.and((w) -> {
-                w.eq("id", key).or().like("spu_name", key);
-            });
+        if (StringUtils.isNotBlank(key)) {
+            wrapper.and((w) -> w.eq("id", key).or().like("spu_name", key));
         }
         String status = (String) params.get("status");
-        if (StringUtils.isNotEmpty(status)) {
+        if (StringUtils.isNotBlank(status)) {
             wrapper.eq("publish_status", status);
         }
         String brandId = (String) params.get("brandId");
-        if (StringUtils.isNotEmpty(brandId) && !"0".equals(brandId)) {
+        if (StringUtils.isNotBlank(brandId) && !"0".equals(brandId)) {
             wrapper.eq("brand_id", brandId);
         }
         String catalogId = (String) params.get("catalogId");
-        if (StringUtils.isNotEmpty(catalogId) && !"0".equals(catalogId)) {
+        if (StringUtils.isNotBlank(catalogId) && !"0".equals(catalogId)) {
             wrapper.eq("catalog_id", catalogId);
         }
 
