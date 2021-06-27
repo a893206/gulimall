@@ -2,12 +2,14 @@ package com.cr.gulimall.ware.controller;
 
 import com.cr.common.utils.PageUtils;
 import com.cr.common.utils.R;
+import com.cr.gulimall.ware.MergeVo;
 import com.cr.gulimall.ware.entity.PurchaseEntity;
 import com.cr.gulimall.ware.service.PurchaseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Arrays;
+import java.util.Date;
 import java.util.Map;
 
 
@@ -24,6 +26,22 @@ import java.util.Map;
 public class PurchaseController {
     @Autowired
     private PurchaseService purchaseService;
+
+    @PostMapping("/merge")
+    //@RequiresPermissions("ware:purchase:list")
+    public R merge(@RequestBody MergeVo mergeVo) {
+        purchaseService.mergePurchase(mergeVo);
+
+        return R.ok();
+    }
+
+    @RequestMapping("/unreceive/list")
+    //@RequiresPermissions("ware:purchase:list")
+    public R unreceiveList(@RequestParam Map<String, Object> params){
+        PageUtils page = purchaseService.queryPageUnreceive(params);
+
+        return R.ok().put("page", page);
+    }
 
     /**
      * 列表
@@ -54,6 +72,8 @@ public class PurchaseController {
     @RequestMapping("/save")
     //@RequiresPermissions("ware:purchase:save")
     public R save(@RequestBody PurchaseEntity purchase){
+        purchase.setCreateTime(new Date());
+        purchase.setUpdateTime(new Date());
 		purchaseService.save(purchase);
 
         return R.ok();
