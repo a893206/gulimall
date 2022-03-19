@@ -2,8 +2,9 @@ package com.cr.gulimall.ware.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.cr.common.utils.PageUtils;
-import com.cr.gulimall.ware.MergeVo;
 import com.cr.gulimall.ware.entity.PurchaseEntity;
+import com.cr.gulimall.ware.vo.MergeVo;
+import com.cr.gulimall.ware.vo.PurchaseDoneVo;
 
 import java.util.List;
 import java.util.Map;
@@ -30,5 +31,11 @@ public interface PurchaseService extends IService<PurchaseEntity> {
      */
     void received(List<Long> ids);
 
+    /**
+     * 完成采购
+     *
+     * @param doneVo 完成采购Vo
+     */
+    void done(PurchaseDoneVo doneVo);
 }
 

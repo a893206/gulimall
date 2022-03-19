@@ -1,4 +1,4 @@
-package com.cr.gulimall.product.config;
+package com.cr.gulimall.ware.config;
 
 import com.baomidou.mybatisplus.extension.plugins.PaginationInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.pagination.optimize.JsqlParserCountOptimize;
@@ -13,7 +13,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
  */
 @EnableTransactionManagement
 @Configuration
-@MapperScan("com.cr.gulimall.product.dao")
+@MapperScan("com.cr.gulimall.ware.dao")
 public class MybatisPlusConfig {
 
     /**

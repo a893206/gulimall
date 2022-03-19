@@ -1,4 +1,4 @@
-package com.cr.gulimall.ware;
+package com.cr.gulimall.ware.vo;
 
 import lombok.Data;
 

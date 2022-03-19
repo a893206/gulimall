@@ -2,9 +2,10 @@ package com.cr.gulimall.ware.controller;
 
 import com.cr.common.utils.PageUtils;
 import com.cr.common.utils.R;
-import com.cr.gulimall.ware.MergeVo;
 import com.cr.gulimall.ware.entity.PurchaseEntity;
 import com.cr.gulimall.ware.service.PurchaseService;
+import com.cr.gulimall.ware.vo.MergeVo;
+import com.cr.gulimall.ware.vo.PurchaseDoneVo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,6 +27,13 @@ import java.util.Map;
 public class PurchaseController {
     @Autowired
     private PurchaseService purchaseService;
+
+    @PostMapping("/done")
+    public R done(@RequestBody PurchaseDoneVo doneVo) {
+        purchaseService.done(doneVo);
+
+        return R.ok();
+    }
 
     /**
      * 领取采购单

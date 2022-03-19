@@ -3,7 +3,7 @@
 
 <mapper namespace="com.cr.gulimall.ware.dao.WareSkuDao">
 
-	<!-- 可根据自己的需求，是否要使用 -->
+    <!-- 可根据自己的需求，是否要使用 -->
     <resultMap type="com.cr.gulimall.ware.entity.WareSkuEntity" id="wareSkuMap">
         <result property="id" column="id"/>
         <result property="skuId" column="sku_id"/>
@@ -13,5 +13,11 @@
         <result property="stockLocked" column="stock_locked"/>
     </resultMap>
 
+    <update id="addStock">
+        UPDATE WMS_WARE_SKU
+        SET STOCK = STOCK + #{skuNum}
+        WHERE SKU_ID = #{skuId}
+          AND WARE_ID = #{wareId}
+    </update>
 
 </mapper>
