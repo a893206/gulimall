@@ -45,8 +45,8 @@ public class R<T> extends HashMap<String, Object> {
 
     public static R error(BizCodeEnum bizCodeEnum) {
         R r = new R();
-        r.put("code", bizCodeEnum.code);
-        r.put("msg", bizCodeEnum.msg);
+        r.put("code", bizCodeEnum.getCode());
+        r.put("msg", bizCodeEnum.getMsg());
         return r;
     }
 

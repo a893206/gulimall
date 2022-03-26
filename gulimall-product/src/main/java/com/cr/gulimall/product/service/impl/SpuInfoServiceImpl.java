@@ -3,6 +3,7 @@ package com.cr.gulimall.product.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.cr.common.constant.ProductConstant;
 import com.cr.common.to.SkuHasStockVo;
 import com.cr.common.to.SkuReductionTo;
 import com.cr.common.to.SpuBoundsTo;
@@ -13,6 +14,7 @@ import com.cr.common.utils.R;
 import com.cr.gulimall.product.dao.SpuInfoDao;
 import com.cr.gulimall.product.entity.*;
 import com.cr.gulimall.product.feign.CouponFeignService;
+import com.cr.gulimall.product.feign.SearchFeignService;
 import com.cr.gulimall.product.feign.WareFeignService;
 import com.cr.gulimall.product.service.*;
 import com.cr.gulimall.product.vo.*;
@@ -68,6 +70,9 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoDao, SpuInfoEntity> i
 
     @Autowired
     private WareFeignService wareFeignService;
+
+    @Autowired
+    private SearchFeignService searchFeignService;
 
     @Override
     public PageUtils queryPage(Map<String, Object> params) {
@@ -233,7 +238,7 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoDao, SpuInfoEntity> i
         List<SkuInfoEntity> skus = skuInfoService.getSkusBySpuId(spuId);
         List<Long> skuIdList = skus.stream().map(SkuInfoEntity::getSkuId).collect(Collectors.toList());
 
-        // TODO 4、查询当前sku的所有可以被用来检索的规格属性
+        // 4、查询当前sku的所有可以被用来检索的规格属性
         List<ProductAttrValueEntity> baseAttrs = attrValueService.baseAttrListForSpu(spuId);
         List<Long> attrIds = baseAttrs.stream().map(ProductAttrValueEntity::getAttrId).collect(Collectors.toList());
 
@@ -256,7 +261,7 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoDao, SpuInfoEntity> i
 
         // 2、封装每个sku的信息
         Map<Long, Boolean> finalStockMap = stockMap;
-        skus.stream().map(sku -> {
+        List<SkuEsModel> upProducts = skus.stream().map(sku -> {
             // 组装需要的数据
             SkuEsModel esModel = new SkuEsModel();
             BeanUtils.copyProperties(sku, esModel);
@@ -282,7 +287,16 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoDao, SpuInfoEntity> i
             return esModel;
         }).collect(Collectors.toList());
 
-        // TODO 5、将数据发送给es进行保存；gulimall-search；
+        // 5、将数据发送给es进行保存；gulimall-search；
+        R r = searchFeignService.productStatusUp(upProducts);
+        if (r.getCode() == 0) {
+            // 远程调用成功
+            // 6、修改当前spu的状态
+            baseMapper.updateSpuStatus(spuId, ProductConstant.StatusEnum.SPU_UP.getCode());
+        } else {
+            // 远程调用失败
+            // TODO 7、重复调用？接口幂等性；重试机制？
+        }
     }
 
 }
