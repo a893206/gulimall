@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.cr.common.to.SkuReductionTo;
 import com.cr.common.to.SpuBoundsTo;
+import com.cr.common.to.es.SkuEsModel;
 import com.cr.common.utils.PageUtils;
 import com.cr.common.utils.Query;
 import com.cr.common.utils.R;
@@ -55,6 +56,12 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoDao, SpuInfoEntity> i
 
     @Autowired
     private CouponFeignService couponFeignService;
+
+    @Autowired
+    private BrandService brandService;
+
+    @Autowired
+    private CategoryService categoryService;
 
     @Override
     public PageUtils queryPage(Map<String, Object> params) {
@@ -207,6 +214,44 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoDao, SpuInfoEntity> i
         );
 
         return new PageUtils(page);
+    }
+
+    /**
+     * 商品上架
+     *
+     * @param spuId spuId
+     */
+    @Override
+    public void up(Long spuId) {
+        // 1、查出当前spuId对应的所有sku信息，品牌的名字。
+        List<SkuInfoEntity> skus = skuInfoService.getSkusBySpuId(spuId);
+
+        // TODO 4、查询当前sku的所有可以被用来检索的规格属性
+
+        // 2、封装每个sku的信息
+        skus.stream().map(sku -> {
+            // 组装需要的数据
+            SkuEsModel esModel = new SkuEsModel();
+            BeanUtils.copyProperties(sku, esModel);
+
+            esModel.setSkuPrice(sku.getPrice());
+            esModel.setSkuImg(sku.getSkuDefaultImg());
+            // TODO 1、发送远程调用，库存系统查询是否有库存
+
+            // TODO 2、热度评分。0
+
+            // TODO 3、查询品牌和分类的名字信息
+            BrandEntity brand = brandService.getById(esModel.getBrandId());
+            esModel.setBrandName(brand.getName());
+            esModel.setBrandImg(brand.getLogo());
+
+            CategoryEntity category = categoryService.getById(esModel.getCatalogId());
+            esModel.setCatalogName(category.getName());
+
+            return esModel;
+        }).collect(Collectors.toList());
+
+        // TODO 5、将数据发送给es进行保存；gulimall-search；
     }
 
 }
