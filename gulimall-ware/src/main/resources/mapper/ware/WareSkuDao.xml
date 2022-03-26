@@ -20,4 +20,10 @@
           AND WARE_ID = #{wareId}
     </update>
 
+    <select id="getSkuStock" resultType="java.lang.Long">
+        SELECT SUM(STOCK - STOCK_LOCKED)
+        FROM WMS_WARE_SKU
+        WHERE SKU_ID = #{skuId}
+    </select>
+
 </mapper>

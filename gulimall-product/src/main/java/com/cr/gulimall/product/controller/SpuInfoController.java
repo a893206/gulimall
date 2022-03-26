@@ -29,9 +29,9 @@ public class SpuInfoController {
     /**
      * 商品上架
      */
-    @RequestMapping("/{spuId}/up")
+    @PostMapping("/{spuId}/up")
     //@RequiresPermissions("product:spuinfo:list")
-    public R list(@PathVariable("spuId") Long spuId) {
+    public R spuUp(@PathVariable("spuId") Long spuId) {
         spuInfoService.up(spuId);
 
         return R.ok();

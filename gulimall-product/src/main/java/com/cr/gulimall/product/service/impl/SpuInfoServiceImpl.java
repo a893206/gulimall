@@ -3,6 +3,7 @@ package com.cr.gulimall.product.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.cr.common.to.SkuHasStockVo;
 import com.cr.common.to.SkuReductionTo;
 import com.cr.common.to.SpuBoundsTo;
 import com.cr.common.to.es.SkuEsModel;
@@ -12,6 +13,7 @@ import com.cr.common.utils.R;
 import com.cr.gulimall.product.dao.SpuInfoDao;
 import com.cr.gulimall.product.entity.*;
 import com.cr.gulimall.product.feign.CouponFeignService;
+import com.cr.gulimall.product.feign.WareFeignService;
 import com.cr.gulimall.product.service.*;
 import com.cr.gulimall.product.vo.*;
 import org.apache.commons.lang3.StringUtils;
@@ -22,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -62,6 +65,9 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoDao, SpuInfoEntity> i
 
     @Autowired
     private CategoryService categoryService;
+
+    @Autowired
+    private WareFeignService wareFeignService;
 
     @Override
     public PageUtils queryPage(Map<String, Object> params) {
@@ -225,6 +231,7 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoDao, SpuInfoEntity> i
     public void up(Long spuId) {
         // 1、查出当前spuId对应的所有sku信息，品牌的名字。
         List<SkuInfoEntity> skus = skuInfoService.getSkusBySpuId(spuId);
+        List<Long> skuIdList = skus.stream().map(SkuInfoEntity::getSkuId).collect(Collectors.toList());
 
         // TODO 4、查询当前sku的所有可以被用来检索的规格属性
         List<ProductAttrValueEntity> baseAttrs = attrValueService.baseAttrListForSpu(spuId);
@@ -238,7 +245,17 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoDao, SpuInfoEntity> i
             return attr;
         }).collect(Collectors.toList());
 
+        // 1、发送远程调用，库存系统查询是否有库存
+        Map<Long, Boolean> stockMap = new HashMap<>(16);
+        try {
+            R<List<SkuHasStockVo>> skusHasStock = wareFeignService.getSkusHasStock(skuIdList);
+            stockMap = skusHasStock.getData().stream().collect(Collectors.toMap(SkuHasStockVo::getSkuId, SkuHasStockVo::getHasStock));
+        } catch (Exception e) {
+            log.error("库存服务查询异常：原因{}", e);
+        }
+
         // 2、封装每个sku的信息
+        Map<Long, Boolean> finalStockMap = stockMap;
         skus.stream().map(sku -> {
             // 组装需要的数据
             SkuEsModel esModel = new SkuEsModel();
@@ -246,8 +263,8 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoDao, SpuInfoEntity> i
 
             esModel.setSkuPrice(sku.getPrice());
             esModel.setSkuImg(sku.getSkuDefaultImg());
-            // TODO 1、发送远程调用，库存系统查询是否有库存
 
+            esModel.setHasStock(finalStockMap.getOrDefault(sku.getSkuId(), true));
             // TODO 2、热度评分。0
             esModel.setHotScore(0L);
 
