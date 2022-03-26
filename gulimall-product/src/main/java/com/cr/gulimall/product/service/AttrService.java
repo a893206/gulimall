@@ -31,6 +31,7 @@ public interface AttrService extends IService<AttrEntity> {
 
     /**
      * 根据分组id查找关联的所有基本属性
+     *
      * @param attrGroupId 分组id
      * @return 商品属性对象集合
      */
@@ -40,11 +41,19 @@ public interface AttrService extends IService<AttrEntity> {
 
     /**
      * 获取当前分组没有关联的所有属性
+     *
      * @param attrGroupId
      * @param params
      * @return
      */
     PageUtils getNoRelationAttr(Long attrGroupId, Map<String, Object> params);
 
+    /**
+     * 在指定的所有属性集合里面，挑出检索属性
+     *
+     * @param attrIds 属性id列表
+     * @return 属性id列表
+     */
+    List<Long> selectSearchAttrIds(List<Long> attrIds);
 }
 
