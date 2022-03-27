@@ -295,7 +295,28 @@ public class SpuInfoServiceImpl extends ServiceImpl<SpuInfoDao, SpuInfoEntity> i
             baseMapper.updateSpuStatus(spuId, ProductConstant.StatusEnum.SPU_UP.getCode());
         } else {
             // 远程调用失败
-            // TODO 7、重复调用？接口幂等性；重试机制？
+            // 7、重复调用？接口幂等性；重试机制？
+            // Feign调用流程
+            // 1、构造请求数据，将对象转为json：
+            // RequestTemplate template = this.buildTemplateFromArgs.create(argv);
+            // 2、发送请求进行执行：
+            // executeAndDecode(template);
+            // 3、执行请求会有重试机制
+            // while (true) {
+            //    try {
+            //         return this.executeAndDecode(template);
+            //     } catch (RetryableException var8) {
+            //         try {
+            //             retryer.continueOrPropagate(e);
+            //         } catch (RetryableException var7) {
+            //             Throwable cause = var7.getCause();
+            //             if (this.propagationPolicy == ExceptionPropagationPolicy.UNWRAP && cause != null) {
+            //                 throw cause;
+            //             }
+            //             throw var7;
+            //         }
+            //     }
+            // }
         }
     }
 
