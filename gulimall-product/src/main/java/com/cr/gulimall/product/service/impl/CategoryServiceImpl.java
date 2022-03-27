@@ -121,20 +121,23 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
 
     @Override
     public Map<String, Object> getCatalogJson() {
+        // 1、将数据库的多次查询变为一次
+        List<CategoryEntity> selectList = baseMapper.selectList(null);
+
         // 1、查出所有1级分类
         List<CategoryEntity> level1Categories = getLevel1Categories();
 
         // 2、封装数据
         return level1Categories.stream().collect(Collectors.toMap(k -> k.getCatId().toString(), v -> {
             // 1、每一个的一级分类，查到这个一级分类的所有二级分类
-            List<CategoryEntity> categoryEntities = baseMapper.selectList(new QueryWrapper<CategoryEntity>().eq("parent_cid", v.getCatId()));
+            List<CategoryEntity> categoryEntities = getParentCid(selectList, v.getCatId());
             // 2、封装上面的结果
             List<Catalog2Vo> catalog2Vos = new ArrayList<>();
             if (categoryEntities != null) {
                 catalog2Vos = categoryEntities.stream().map(l2 -> {
                     Catalog2Vo catalog2Vo = new Catalog2Vo(v.getCatId().toString(), null, l2.getCatId().toString(), l2.getName());
                     // 1、找当前二级分类的三级分类封装成vo
-                    List<CategoryEntity> level3Catalogs = baseMapper.selectList(new QueryWrapper<CategoryEntity>().eq("parent_cid", l2.getCatId()));
+                    List<CategoryEntity> level3Catalogs = getParentCid(selectList, l2.getCatId());
                     if (level3Catalogs != null) {
                         List<Catalog2Vo.Catalog3Vo> collect = level3Catalogs.stream().map(l3 -> {
                             // 2、封装成指定格式
@@ -147,5 +150,10 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
             }
             return catalog2Vos;
         }));
+    }
+
+    private List<CategoryEntity> getParentCid(List<CategoryEntity> selectList, Long parentCid) {
+        // return baseMapper.selectList(new QueryWrapper<CategoryEntity>().eq("parent_cid", v.getCatId()));
+        return selectList.stream().filter(item -> item.getParentCid().equals(parentCid)).collect(Collectors.toList());
     }
 }
