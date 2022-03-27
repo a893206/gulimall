@@ -8,10 +8,9 @@
 
 package com.cr.common.utils;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.TypeReference;
 import com.cr.common.exception.BizCodeEnum;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
 import org.apache.http.HttpStatus;
 
 import java.util.HashMap;
@@ -22,17 +21,23 @@ import java.util.Map;
  *
  * @author Mark sunlightcs@gmail.com
  */
-@EqualsAndHashCode(callSuper = true)
-@Data
-@AllArgsConstructor
-public class R<T> extends HashMap<String, Object> {
+public class R extends HashMap<String, Object> {
     private static final long serialVersionUID = 1L;
-
-    private T data;
 
     public R() {
         put("code", 0);
         put("msg", "success");
+    }
+
+    public R setData(Object data) {
+        put("data", data);
+        return this;
+    }
+
+    public <T> T getData(TypeReference<T> typeReference) {
+        Object data = get("data");
+        String s = JSON.toJSONString(data);
+        return JSON.parseObject(s, typeReference);
     }
 
     public static R error() {
@@ -71,10 +76,6 @@ public class R<T> extends HashMap<String, Object> {
 
     public static R ok() {
         return new R();
-    }
-
-    public static <T> R<T> ok(T data) {
-        return new R<>(data);
     }
 
     @Override
