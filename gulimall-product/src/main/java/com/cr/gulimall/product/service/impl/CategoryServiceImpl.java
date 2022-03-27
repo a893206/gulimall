@@ -59,6 +59,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
     /**
      * 找到catalogId的完整路径
      * [父, 子, 孙]
+     *
      * @param catalogId
      * @return
      */
@@ -72,6 +73,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
 
     /**
      * 级联更新所有关联的数据
+     *
      * @param category
      */
     @Transactional
@@ -108,4 +110,8 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public List<CategoryEntity> getLevel1Categories() {
+        return baseMapper.selectList(new QueryWrapper<CategoryEntity>().eq("parent_cid", 0));
+    }
 }

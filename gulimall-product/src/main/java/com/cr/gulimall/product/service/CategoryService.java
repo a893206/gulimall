@@ -25,6 +25,7 @@ public interface CategoryService extends IService<CategoryEntity> {
     /**
      * 找到catalogId的完整路径
      * [父, 子, 孙]
+     *
      * @param catalogId
      * @return
      */
@@ -32,9 +33,11 @@ public interface CategoryService extends IService<CategoryEntity> {
 
     /**
      * 级联更新所有关联的数据
+     *
      * @param category
      */
     void updateCascade(CategoryEntity category);
 
+    List<CategoryEntity> getLevel1Categories();
 }
 
