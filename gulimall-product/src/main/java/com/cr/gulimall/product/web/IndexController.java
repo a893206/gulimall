@@ -34,4 +34,10 @@ public class IndexController {
     public Map<String, Object> getCatalogJson() {
         return categoryService.getCatalogJson();
     }
+
+    @ResponseBody
+    @GetMapping("/hello")
+    public String hello() {
+        return "hello";
+    }
 }
