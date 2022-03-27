@@ -9,6 +9,7 @@ import com.cr.gulimall.product.dao.CategoryDao;
 import com.cr.gulimall.product.entity.CategoryEntity;
 import com.cr.gulimall.product.service.CategoryBrandRelationService;
 import com.cr.gulimall.product.service.CategoryService;
+import com.cr.gulimall.product.vo.Catalog2Vo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -113,5 +114,35 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
     @Override
     public List<CategoryEntity> getLevel1Categories() {
         return baseMapper.selectList(new QueryWrapper<CategoryEntity>().eq("parent_cid", 0));
+    }
+
+    @Override
+    public Map<String, Object> getCatalogJson() {
+        // 1、查出所有1级分类
+        List<CategoryEntity> level1Categories = getLevel1Categories();
+
+        // 2、封装数据
+        return level1Categories.stream().collect(Collectors.toMap(k -> k.getCatId().toString(), v -> {
+            // 1、每一个的一级分类，查到这个一级分类的所有二级分类
+            List<CategoryEntity> categoryEntities = baseMapper.selectList(new QueryWrapper<CategoryEntity>().eq("parent_cid", v.getCatId()));
+            // 2、封装上面的结果
+            List<Catalog2Vo> catalog2Vos = new ArrayList<>();
+            if (categoryEntities != null) {
+                catalog2Vos = categoryEntities.stream().map(l2 -> {
+                    Catalog2Vo catalog2Vo = new Catalog2Vo(v.getCatId().toString(), null, l2.getCatId().toString(), l2.getName());
+                    // 1、找当前二级分类的三级分类封装成vo
+                    List<CategoryEntity> level3Catalogs = baseMapper.selectList(new QueryWrapper<CategoryEntity>().eq("parent_cid", l2.getCatId()));
+                    if (level3Catalogs != null) {
+                        List<Catalog2Vo.Catalog3Vo> collect = level3Catalogs.stream().map(l3 -> {
+                            // 2、封装成指定格式
+                            return new Catalog2Vo.Catalog3Vo(l2.getCatId().toString(), l3.getCatId().toString(), l3.getName());
+                        }).collect(Collectors.toList());
+                        catalog2Vo.setCatalog3List(collect);
+                    }
+                    return catalog2Vo;
+                }).collect(Collectors.toList());
+            }
+            return catalog2Vos;
+        }));
     }
 }
