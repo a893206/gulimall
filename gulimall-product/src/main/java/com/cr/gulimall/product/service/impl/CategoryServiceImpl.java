@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 
@@ -145,6 +146,10 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
     public Map<String, Object> getCatalogJson() {
         // 给缓存中放json字符串，拿出的json字符串，还要逆转为能用的对象类型；【序列化与反序列化】
 
+        // 1、空结果缓存：解决缓存穿透
+        // 2、设置过期时间（加随机值）：解决缓存雪崩
+        // 3、加锁：解决缓存击穿
+
         // 1、加入缓存逻辑，缓存中存的数据是json字符串。
         // JSON跨语言，跨平台兼容。
         String catalogJson = stringRedisTemplate.opsForValue().get("catalogJson");
@@ -153,7 +158,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
             Map<String, Object> catalogJsonFromDb = getCatalogJsonFromDb();
             // 3、查到的数据再放入缓存，将对象转为json放在缓存中
             String s = JSON.toJSONString(catalogJsonFromDb);
-            stringRedisTemplate.opsForValue().set("catalogJson", s);
+            stringRedisTemplate.opsForValue().set("catalogJson", s, 1, TimeUnit.DAYS);
             return catalogJsonFromDb;
         }
 
