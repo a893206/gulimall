@@ -1,5 +1,7 @@
 package com.cr.gulimall.product.service.impl;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.TypeReference;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -11,8 +13,10 @@ import com.cr.gulimall.product.service.CategoryBrandRelationService;
 import com.cr.gulimall.product.service.CategoryService;
 import com.cr.gulimall.product.vo.Catalog2Vo;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -28,6 +32,9 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
 
     @Autowired
     private CategoryBrandRelationService categoryBrandRelationService;
+
+    @Autowired
+    private StringRedisTemplate stringRedisTemplate;
 
     @Override
     public PageUtils queryPage(Map<String, Object> params) {
@@ -123,6 +130,31 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
 
     @Override
     public Map<String, Object> getCatalogJson() {
+        // 给缓存中放json字符串，拿出的json字符串，还要逆转为能用的对象类型；【序列化与反序列化】
+
+        // 1、加入缓存逻辑，缓存中存的数据是json字符串。
+        // JSON跨语言，跨平台兼容。
+        String catalogJson = stringRedisTemplate.opsForValue().get("catalogJson");
+        if (StringUtils.isEmpty(catalogJson)) {
+            // 2、缓存中没有
+            Map<String, Object> catalogJsonFromDb = getCatalogJsonFromDb();
+            // 3、查到的数据再放入缓存，将对象转为json放在缓存中
+            String s = JSON.toJSONString(catalogJsonFromDb);
+            stringRedisTemplate.opsForValue().set("catalogJson", s);
+            return catalogJsonFromDb;
+        }
+
+        // 转为我们指定的对象
+        return JSON.parseObject(catalogJson, new TypeReference<Map<String, Object>>() {
+        });
+    }
+
+    /**
+     * 从数据库查询并封装分类数据
+     *
+     * @return 分类数据
+     */
+    public Map<String, Object> getCatalogJsonFromDb() {
         // 1、如果缓存中有就用缓存的
 //         Map<String, Object> catalogJson = (Map<String, Object>) cache.get("catalogJson");
 //        if (cache.get("catalogJson") == null) {
