@@ -24,6 +24,8 @@ import java.util.stream.Collectors;
 @Service("categoryService")
 public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity> implements CategoryService {
 
+//    private final Map<String, Object> cache = new HashMap<>(16);
+
     @Autowired
     private CategoryBrandRelationService categoryBrandRelationService;
 
@@ -121,6 +123,15 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
 
     @Override
     public Map<String, Object> getCatalogJson() {
+        // 1、如果缓存中有就用缓存的
+//         Map<String, Object> catalogJson = (Map<String, Object>) cache.get("catalogJson");
+//        if (cache.get("catalogJson") == null) {
+//            // 调用业务
+//            // 返回数据又放入缓存
+//            cache.put("catalogJson", catalogJson);
+//        }
+//        return catalogJson;
+
         // 1、将数据库的多次查询变为一次
         List<CategoryEntity> selectList = baseMapper.selectList(null);
 
