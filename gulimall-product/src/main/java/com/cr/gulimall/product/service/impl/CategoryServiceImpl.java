@@ -12,6 +12,8 @@ import com.cr.gulimall.product.entity.CategoryEntity;
 import com.cr.gulimall.product.service.CategoryBrandRelationService;
 import com.cr.gulimall.product.service.CategoryService;
 import com.cr.gulimall.product.vo.Catalog2Vo;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
@@ -37,6 +39,9 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
 
     @Autowired
     private StringRedisTemplate stringRedisTemplate;
+
+    @Autowired
+    private RedissonClient redissonClient;
 
     @Override
     public PageUtils queryPage(Map<String, Object> params) {
@@ -88,12 +93,15 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
      *
      * @param category
      */
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     @Override
     public void updateCascade(CategoryEntity category) {
         updateById(category);
 
         categoryBrandRelationService.updateCategory(category.getCatId(), category.getName());
+
+        // 同时修改缓存中的数据
+        // redis.del("catalogJson");等待下次主动查询进行更新
     }
 
     private List<Long> findParentPath(Long catalogId, List<Long> paths) {
@@ -236,6 +244,31 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
             }
             return getCatalogJsonFromDbWithRedisLock();
         }
+    }
+
+    /**
+     * 从数据库查询并封装分类数据
+     * 缓存里面的数据如何和数据库保持一致
+     * 缓存数据一致性
+     * 1、双写模式
+     * 2、失效模式
+     *
+     * @return 分类数据
+     */
+    public Map<String, Object> getCatalogJsonFromDbWithRedissonLock() {
+        // 1、锁的名字。锁的粒度，越细越快。
+        // 锁的粒度：具体缓存的是某个数据。11-号商品；product-11-lock product-12-lock product-lock
+        RLock lock = redissonClient.getLock("catalogJson-lock");
+        lock.lock();
+
+        Map<String, Object> dataFromDb;
+        try {
+            dataFromDb = getDataFromDb();
+        } finally {
+            lock.unlock();
+        }
+
+        return dataFromDb;
     }
 
     private Map<String, Object> getDataFromDb() {
