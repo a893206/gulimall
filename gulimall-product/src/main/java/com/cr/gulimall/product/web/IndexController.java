@@ -3,6 +3,7 @@ package com.cr.gulimall.product.web;
 import com.cr.gulimall.product.entity.CategoryEntity;
 import com.cr.gulimall.product.service.CategoryService;
 import org.redisson.api.RLock;
+import org.redisson.api.RReadWriteLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -76,4 +78,51 @@ public class IndexController {
 
         return "hello";
     }
+
+    /**
+     * 保证一定能读到最新数据，修改期间，写锁是一个排他锁（互斥锁）。读锁是一个共享锁
+     * 写锁没释放读就必须等待
+     */
+    @GetMapping("/write")
+    @ResponseBody
+    public String writeValue() {
+        RReadWriteLock readWriteLock = redissonClient.getReadWriteLock("rw-lock");
+        RLock rLock = readWriteLock.writeLock();
+        String s = "";
+
+        try {
+            // 1、改数据加写锁，读数据加读锁
+            rLock.lock();
+            s = UUID.randomUUID().toString();
+            Thread.sleep(30000);
+            redissonClient.getBucket("writeValue").set(s);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } finally {
+            rLock.unlock();
+        }
+
+        return s;
+    }
+
+    @GetMapping("/read")
+    @ResponseBody
+    public String readValue() {
+        RReadWriteLock readWriteLock = redissonClient.getReadWriteLock("rw-lock");
+        RLock rLock = readWriteLock.readLock();
+        String s = "";
+
+        try {
+            // 加读锁
+            rLock.lock();
+            s = redissonClient.getBucket("writeValue").get().toString();
+        } catch (Exception ignored) {
+
+        } finally {
+            rLock.unlock();
+        }
+
+        return s;
+    }
+
 }
