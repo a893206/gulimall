@@ -2,8 +2,10 @@ package com.cr.gulimall.product.web;
 
 import com.cr.gulimall.product.entity.CategoryEntity;
 import com.cr.gulimall.product.service.CategoryService;
+import lombok.SneakyThrows;
 import org.redisson.api.RLock;
 import org.redisson.api.RReadWriteLock;
+import org.redisson.api.RSemaphore;
 import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -133,6 +135,38 @@ public class IndexController {
         }
 
         return s;
+    }
+
+    /**
+     * 车库停车
+     * 3车位
+     * 信号量也可以用作分布式限流；
+     */
+    @SneakyThrows
+    @GetMapping("/park")
+    @ResponseBody
+    public String park() {
+        RSemaphore park = redissonClient.getSemaphore("park");
+        // 获取一个信号，获取一个值，占一个车位
+        // park.acquire();
+        boolean b = park.tryAcquire();
+        if (b) {
+            // 执行业务
+        } else {
+            return "error";
+        }
+
+        return "ok=>" + b;
+    }
+
+    @GetMapping("/go")
+    @ResponseBody
+    public String go() {
+        RSemaphore park = redissonClient.getSemaphore("park");
+        // 释放一个车位
+        park.release();
+
+        return "ok";
     }
 
 }
