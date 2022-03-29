@@ -80,8 +80,13 @@ public class IndexController {
     }
 
     /**
-     * 保证一定能读到最新数据，修改期间，写锁是一个排他锁（互斥锁）。读锁是一个共享锁
+     * 保证一定能读到最新数据，修改期间，写锁是一个排他锁（互斥锁、独享锁）。读锁是一个共享锁
      * 写锁没释放读就必须等待
+     * 读 + 读：相当于无锁，并发读，只会在redis中记录好，所有当前的读锁。他们都会同时加锁成功
+     * 写 + 读：等待写锁释放
+     * 写 + 写：阻塞方式
+     * 读 + 写：有读锁。写也需要等待。
+     * 只要有写的存在，都必须等待
      */
     @GetMapping("/write")
     @ResponseBody
@@ -93,6 +98,7 @@ public class IndexController {
         try {
             // 1、改数据加写锁，读数据加读锁
             rLock.lock();
+            System.out.println("写锁加锁成功……" + Thread.currentThread().getId());
             s = UUID.randomUUID().toString();
             Thread.sleep(30000);
             redissonClient.getBucket("writeValue").set(s);
@@ -100,6 +106,7 @@ public class IndexController {
             e.printStackTrace();
         } finally {
             rLock.unlock();
+            System.out.println("写锁释放" + Thread.currentThread().getId());
         }
 
         return s;
@@ -115,11 +122,14 @@ public class IndexController {
         try {
             // 加读锁
             rLock.lock();
+            System.out.println("读锁加锁成功……" + Thread.currentThread().getId());
+            Thread.sleep(30000);
             s = redissonClient.getBucket("writeValue").get().toString();
         } catch (Exception ignored) {
 
         } finally {
             rLock.unlock();
+            System.out.println("读锁释放" + Thread.currentThread().getId());
         }
 
         return s;
