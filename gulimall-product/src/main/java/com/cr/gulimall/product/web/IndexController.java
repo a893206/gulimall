@@ -3,14 +3,12 @@ package com.cr.gulimall.product.web;
 import com.cr.gulimall.product.entity.CategoryEntity;
 import com.cr.gulimall.product.service.CategoryService;
 import lombok.SneakyThrows;
-import org.redisson.api.RLock;
-import org.redisson.api.RReadWriteLock;
-import org.redisson.api.RSemaphore;
-import org.redisson.api.RedissonClient;
+import org.redisson.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.util.List;
@@ -167,6 +165,33 @@ public class IndexController {
         park.release();
 
         return "ok";
+    }
+
+    /**
+     * 放假，锁门
+     * 1班没人了，2
+     * 5个班全部走完，我们可以锁大门
+     */
+    @SneakyThrows
+    @GetMapping("/lockDoor")
+    @ResponseBody
+    public String lockDoor() {
+        RCountDownLatch door = redissonClient.getCountDownLatch("door");
+        // 等待闭锁都完成
+        door.trySetCount(5);
+        door.await();
+
+        return "放假了……";
+    }
+
+    @GetMapping("/gogogo/{id}")
+    @ResponseBody
+    public String gogogo(@PathVariable("id") Long id) {
+        RCountDownLatch door = redissonClient.getCountDownLatch("door");
+        // 计数减一
+        door.countDown();
+
+        return id + "班的人都走了……";
     }
 
 }
