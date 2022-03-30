@@ -2,6 +2,7 @@ package com.cr.gulimall.product.web;
 
 import com.cr.gulimall.product.entity.CategoryEntity;
 import com.cr.gulimall.product.service.CategoryService;
+import com.cr.gulimall.product.vo.Catalog2Vo;
 import lombok.SneakyThrows;
 import org.redisson.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,7 +41,7 @@ public class IndexController {
 
     @ResponseBody
     @GetMapping("/index/catalog.json")
-    public Map<String, Object> getCatalogJson() {
+    public Map<String, List<Catalog2Vo>> getCatalogJson() {
         return categoryService.getCatalogJson();
     }
 

@@ -15,6 +15,7 @@ import com.cr.gulimall.product.vo.Catalog2Vo;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
@@ -91,9 +92,21 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
 
     /**
      * 级联更新所有关联的数据
+     * CacheEvict：失效模式
+     * 1、同时进行多种缓存操作 @Caching
+     * 2、指定删除某个分区下的所有数据 @CacheEvict(value = "category", allEntries = true)
+     * 3、存储同一类型的数据，都可以指定成同一个分区。
      *
-     * @param category
+     * @param category 分类
      */
+//    @Caching(evict = {
+//            @CacheEvict(value = "category", key = "'getLevel1Categories'"),
+//            @CacheEvict(value = "category", key = "'getCatalogJson'")
+//    })
+    // 失效模式
+    @CacheEvict(value = "category", allEntries = true)
+    // 双写模式
+    // @CachePut
     @Transactional(rollbackFor = Exception.class)
     @Override
     public void updateCascade(CategoryEntity category) {
@@ -183,8 +196,51 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
      *
      * @return 分类数据
      */
+    @Cacheable(value = "category", key = "#root.methodName")
     @Override
-    public Map<String, Object> getCatalogJson() {
+    public Map<String, List<Catalog2Vo>> getCatalogJson() {
+        System.out.println("查询了数据库……");
+        List<CategoryEntity> selectList = baseMapper.selectList(null);
+        List<CategoryEntity> level1Categories = getParentCid(selectList, 0L);
+        // 2、封装数据
+        return level1Categories.stream().collect(Collectors.toMap(k -> k.getCatId().toString(), v -> {
+            // 1、每一个的一级分类，查到这个一级分类的所有二级分类
+            List<CategoryEntity> categoryEntities = getParentCid(selectList, v.getCatId());
+            // 2、封装上面的结果
+            List<Catalog2Vo> catalog2Vos = new ArrayList<>();
+            if (categoryEntities != null) {
+                catalog2Vos = categoryEntities.stream().map(l2 -> {
+                    Catalog2Vo catalog2Vo = new Catalog2Vo(v.getCatId().toString(), null, l2.getCatId().toString(), l2.getName());
+                    // 1、找当前二级分类的三级分类封装成vo
+                    List<CategoryEntity> level3Catalogs = getParentCid(selectList, l2.getCatId());
+                    if (level3Catalogs != null) {
+                        List<Catalog2Vo.Catalog3Vo> collect = level3Catalogs.stream().map(l3 -> {
+                            // 2、封装成指定格式
+                            return new Catalog2Vo.Catalog3Vo(l2.getCatId().toString(), l3.getCatId().toString(), l3.getName());
+                        }).collect(Collectors.toList());
+                        catalog2Vo.setCatalog3List(collect);
+                    }
+                    return catalog2Vo;
+                }).collect(Collectors.toList());
+            }
+            return catalog2Vos;
+        }));
+    }
+
+    /**
+     * TODO 产生堆外内存溢出：OutOfDirectMemoryError
+     * 1、SpringBoot2.0以后默认使用lettuce作为操作redis的客户端。
+     * 2、lettuce的bug导致netty堆外内存溢出 -Xmx300m；netty如果没有指定堆外内存，默认使用-Xmx300m
+     *   可以通过-Dio.netty.maxDirectMemory进行设置
+     * 解决方案：不能使用-Dio.netty.maxDirectMemory只去调大堆外内存。
+     * 1、升级lettuce客户端。
+     * 2、切换使用jedis
+     * Spring再次封装redisTemplate：
+     * lettuce、jedis操作redis的底层客户端。Spring再次封装redisTemplate；
+     *
+     * @return 分类数据
+     */
+    public Map<String, List<Catalog2Vo>> getCatalogJson2() {
         // 给缓存中放json字符串，拿出的json字符串，还要逆转为能用的对象类型；【序列化与反序列化】
 
         // 1、空结果缓存：解决缓存穿透
@@ -202,7 +258,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
 
         System.out.println("缓存命中……直接返回……");
         // 转为我们指定的对象
-        return JSON.parseObject(catalogJson, new TypeReference<Map<String, Object>>() {
+        return JSON.parseObject(catalogJson, new TypeReference<Map<String, List<Catalog2Vo>>>() {
         });
     }
 
@@ -211,7 +267,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
      *
      * @return 分类数据
      */
-    public Map<String, Object> getCatalogJsonFromDbWithLocalLock() {
+    public Map<String, List<Catalog2Vo>> getCatalogJsonFromDbWithLocalLock() {
         // 1、如果缓存中有就用缓存的
 //         Map<String, Object> catalogJson = (Map<String, Object>) cache.get("catalogJson");
 //        if (cache.get("catalogJson") == null) {
@@ -235,7 +291,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
      *
      * @return 分类数据
      */
-    public Map<String, Object> getCatalogJsonFromDbWithRedisLock() {
+    public Map<String, List<Catalog2Vo>> getCatalogJsonFromDbWithRedisLock() {
         // 1、占分布式锁。去redis占坑
         String uuid = UUID.randomUUID().toString();
         Boolean lock = stringRedisTemplate.opsForValue().setIfAbsent("lock", uuid, 300, TimeUnit.SECONDS);
@@ -244,7 +300,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
             // 加锁成功……
             // 2、设置过期时间，必须和加锁是同步的，原子的
             // stringRedisTemplate.expire("lock", 30, TimeUnit.SECONDS);
-            Map<String, Object> dataFromDb;
+            Map<String, List<Catalog2Vo>> dataFromDb;
             try {
                 dataFromDb = getDataFromDb();
             } finally {
@@ -287,13 +343,13 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
      *
      * @return 分类数据
      */
-    public Map<String, Object> getCatalogJsonFromDbWithRedissonLock() {
+    public Map<String, List<Catalog2Vo>> getCatalogJsonFromDbWithRedissonLock() {
         // 1、锁的名字。锁的粒度，越细越快。
         // 锁的粒度：具体缓存的是某个数据。11-号商品；product-11-lock product-12-lock product-lock
         RLock lock = redissonClient.getLock("catalogJson-lock");
         lock.lock();
 
-        Map<String, Object> dataFromDb;
+        Map<String, List<Catalog2Vo>> dataFromDb;
         try {
             dataFromDb = getDataFromDb();
         } finally {
@@ -303,20 +359,18 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
         return dataFromDb;
     }
 
-    private Map<String, Object> getDataFromDb() {
+    private Map<String, List<Catalog2Vo>> getDataFromDb() {
         // 得到锁以后，我们应该再去缓存中确定一次，如果没有才需要继续查询
         String catalogJson = stringRedisTemplate.opsForValue().get("catalogJson");
         if (!StringUtils.isEmpty(catalogJson)) {
             // 缓存不为null直接返回
-            return JSON.parseObject(catalogJson, new TypeReference<Map<String, Object>>() {
+            return JSON.parseObject(catalogJson, new TypeReference<Map<String, List<Catalog2Vo>>>() {
             });
         }
         System.out.println("查询了数据库……");
 
-        // 1、将数据库的多次查询变为一次
         List<CategoryEntity> selectList = baseMapper.selectList(null);
 
-        // 1、查出所有1级分类
         List<CategoryEntity> level1Categories = getLevel1Categories();
 
         // 2、封装数据
@@ -346,7 +400,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
         // 3、查到的数据再放入缓存，将对象转为json放在缓存中
         String s = JSON.toJSONString(catalogJsonFromDb);
         stringRedisTemplate.opsForValue().set("catalogJson", s, 1, TimeUnit.DAYS);
-        return getCatalogJsonFromDbWithLocalLock();
+        return catalogJsonFromDb;
     }
 
     private List<CategoryEntity> getParentCid(List<CategoryEntity> selectList, Long parentCid) {
