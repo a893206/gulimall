@@ -146,7 +146,17 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
      * 1、指定生成的缓存使用的key：key属性指定，接收一个SpEL
      * SpEL的详细https://docs.spring.io/spring-framework/docs/current/reference/html/integration.html#cache-spel-context
      * 2、指定缓存的数据的存活时间：配置文件中修改ttl
-     * 3、将数据保存为json格式
+     * 3、将数据保存为json格式：
+     * <p>
+     * 4、原理：
+     * CacheAutoConfiguration ->
+     * RedisCacheConfiguration ->
+     * 自动配置了RedisCacheManager ->
+     * 初始化所有的缓存 ->
+     * 每个缓存决定使用什么配置 ->
+     * 如果redisCacheConfiguration有就用已有的，没有就用默认配置 ->
+     * 想改缓存的配置，只需要给容器中放一个RedisCacheConfiguration即可 ->
+     * 就会应用到当前RedisCacheManager管理的所有缓存分区中
      *
      * @return 1级分类列表
      */
