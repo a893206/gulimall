@@ -132,12 +132,25 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
     }
 
     /**
-     * Cacheable代表当前方法的结果需要缓存，如果缓存中有，方法不用调用。如果缓存中没有，会调用方法，最后将方法的结果放入缓存
-     * 每一个需要缓存的数据我们都来指定要放到哪个名字的缓存。【缓存的分区（按照业务类型分）】
+     * 1、每一个需要缓存的数据我们都来指定要放到哪个名字的缓存。【缓存的分区（按照业务类型分）】
+     * 2、@Cacheable({"category"})
+     * 代表当前方法的结果需要缓存，如果缓存中有，方法不用调用。
+     * 如果缓存中没有，会调用方法，最后将方法的结果放入缓存
+     * 3、默认行为
+     * 3.1、如果缓存中有，方法不用调用。
+     * 3.2、key默认自动生成：缓存的名字::SimpleKey []（自主生成的key值）
+     * 3.3、缓存的value的值。默认使用jdk序列化机制，将序列化后的数据存到redis
+     * 3.4、默认ttl时间 -1；
+     * <p>
+     * 自定义：
+     * 1、指定生成的缓存使用的key：key属性指定，接收一个SpEL
+     * SpEL的详细https://docs.spring.io/spring-framework/docs/current/reference/html/integration.html#cache-spel-context
+     * 2、指定缓存的数据的存活时间：配置文件中修改ttl
+     * 3、将数据保存为json格式
      *
      * @return 1级分类列表
      */
-    @Cacheable({"category"})
+    @Cacheable(value = {"category"}, key = "#root.methodName")
     @Override
     public List<CategoryEntity> getLevel1Categories() {
         System.out.println("getLevel1Categories……");
