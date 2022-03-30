@@ -169,11 +169,25 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryDao, CategoryEntity
      * 每个缓存决定使用什么配置 ->
      * 如果redisCacheConfiguration有就用已有的，没有就用默认配置 ->
      * 想改缓存的配置，只需要给容器中放一个RedisCacheConfiguration即可 ->
-     * 就会应用到当前RedisCacheManager管理的所有缓存分区中
+     * 就会应用到当前RedisCacheManager管理的所有缓存分区中 ->
+     * CacheManager(自动配置了RedisCacheManager) -> Cache(RedisCache) -> Cache负责缓存的读写
+     * <p>
+     * 5、Spring-Cache的不足：
+     * 5.1、读模式：
+     * 缓存穿透：查询一个null数据。解决：缓存空数据；cache-null-value: true
+     * 缓存击穿：大量并发进来同时查询一个正好过期的数据。解决：加锁；？默认是无加锁的；sync = true（加锁，解决击穿）
+     * 缓存雪崩：大量的key同时过期。解决：加随机时间。加上过期时间。time-to-live: 3600000
+     * 5.2、写模式：（缓存与数据库一致）
+     * 5.2.1、读写加锁。
+     * 5.2.2、引入Canal，感知到MySQL的更新去更新数据库
+     * 5.2.3、读多写多，直接去数据库查询就行
+     * 总结：
+     * 常规数据（读多写少，即时性，一致性要求不高的数据）；完全可以使用Spring-Cache
+     * 特殊数据：特殊设计
      *
      * @return 1级分类列表
      */
-    @Cacheable(value = {"category"}, key = "#root.methodName")
+    @Cacheable(value = {"category"}, key = "#root.methodName", sync = true)
     @Override
     public List<CategoryEntity> getLevel1Categories() {
         System.out.println("getLevel1Categories……");
