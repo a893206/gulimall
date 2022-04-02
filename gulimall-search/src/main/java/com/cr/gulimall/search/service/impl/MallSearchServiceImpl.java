@@ -2,6 +2,7 @@ package com.cr.gulimall.search.service.impl;
 
 import com.cr.gulimall.search.service.MallSearchService;
 import com.cr.gulimall.search.vo.SearchParam;
+import com.cr.gulimall.search.vo.SearchResult;
 import org.springframework.stereotype.Service;
 
 /**
@@ -17,7 +18,7 @@ public class MallSearchServiceImpl implements MallSearchService {
      * @return 返回检索的结果
      */
     @Override
-    public Object search(SearchParam param) {
+    public SearchResult search(SearchParam param) {
         return null;
     }
 }
